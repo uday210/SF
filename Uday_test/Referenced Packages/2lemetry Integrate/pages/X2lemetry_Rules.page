@@ -1,0 +1,107 @@
+<apex:page standardController="mqtt__Config__c"
+	extensions="mqtt.X2lemetryRulesController" action="{!getRulesList}">
+	<head>
+<!-- <apex:includeScript value="{!URLFOR($Resource.jQuery)}"/> -->
+	</head>
+
+	<script>
+      //$(document).ready(function() {
+            //container.append(formatJson(''));
+      
+      //});
+      
+      // formatJson() :: formats and indents JSON string
+      function formatJson(val) {
+          var retval = '';
+          var str = val;
+          var pos = 0;
+          var strLen = str.length;
+          var indentStr = '&nbsp;&nbsp;&nbsp;&nbsp;';
+          var newLine = '<br />';
+          var char = '';
+          
+          for (var i=0; i<strLen; i++) {
+              char = str.substring(i,i+1);
+              
+              if (char == '}' || char == ']') {
+                  retval = retval + newLine;
+                  pos = pos - 1;
+                  
+                  for (var j=0; j<pos; j++) {
+                      retval = retval + indentStr;
+                  }
+              }
+              
+              retval = retval + char; 
+              
+              if (char == '{' || char == '[' || char == ',') {
+                  retval = retval + newLine;
+                  
+                  if (char == '{' || char == '[') {
+                      pos = pos + 1;
+                  }
+                  
+                  for (var k=0; k<pos; k++) {
+                      retval = retval + indentStr;
+                  }
+              }
+          }
+          
+          return retval;
+      }
+  </script>
+	<apex:form >
+
+		<apex:image url="{!URLFOR($Resource.mqtt__config_net, 'config_rules.png')}"
+			height="35px" alt="Photos" rendered="{!isActive}" />
+		<br />
+
+		<apex:pageBlock rendered="{!isActive}">
+			<apex:pageBlockButtons location="bottom">
+				<apex:commandButton value="New" action="{!newRule}" />
+			</apex:pageBlockButtons>
+			<div style="width: 100%; overflow: scroll; height: 250px;">
+
+				<apex:pageBlockSection id="ruleList" columns="1">
+					<apex:pageBlockTable value="{!rulesList.results}" var="r"
+						width="100%">
+						<apex:column >
+							<apex:commandLink value="Delete" action="{!deleteRule}">
+								<apex:param name="ruleId" value="{!r.rowkey}"
+									assignTo="{!ruleId}" />
+							</apex:commandLink>
+                    |&nbsp;
+                    <apex:commandLink value="Update"
+								action="{!updateRule}">
+								<apex:param name="ruleId" value="{!r.rowkey}"
+									assignTo="{!ruleId}" />
+								<apex:param name="name" value="{!r.name}" assignTo="{!name}" />
+								<apex:param name="rule" value="{!r.rule}" assignTo="{!rule}" />
+							</apex:commandLink>
+						</apex:column>
+						<apex:column headerValue="Name" value="{!r.name}" />
+						<apex:column headerValue="Rule" value="{!r.rule}" />
+					</apex:pageBlockTable>
+				</apex:pageBlockSection>
+			</div>
+		</apex:pageBlock>
+
+		<apex:image url="{!URLFOR($Resource.mqtt__config_net, 'editconfig.png')}"
+			height="35px" alt="Photos" rendered="{!(!isActive)}" />
+		<br />
+
+		<apex:pageBlock rendered="{!(!isActive)}">
+			<apex:pageBlockButtons location="bottom">
+				<apex:commandButton value="Save" action="{!addRule}" />
+				<apex:commandButton value="Save & New" action="{!addnewRule}" />
+				<apex:commandButton value="Cancel" action="{!cancelRule}" />
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection >
+				<apex:outputLabel for="name" value="Name" />
+				<apex:inputText id="name" value="{!name}" />
+				<apex:outputLabel for="rule" value="Rule" />
+				<apex:inputTextarea cols="195" rows="5" id="rule" value="{!rule}" />
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

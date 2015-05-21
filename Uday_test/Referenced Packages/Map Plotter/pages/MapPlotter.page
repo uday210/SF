@@ -1,0 +1,543 @@
+<apex:page showHeader="true" sidebar="false" controller="Extentia_SIM.Ctrl_MapPlotter">
+<!-- HEAD -->
+<apex:define name="head">
+   <!-- <apex:includeScript value="{!$Resource.SecureFilters}"/> -->
+    <apex:includeScript value="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places"/>
+    <apex:includeScript value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,'/SIMStyleAndJavascript/js/jquery.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,'/SIMStyleAndJavascript/js/jquery-ui.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,'/SIMStyleAndJavascript/js/jquery.akordeon.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,'/SIMStyleAndJavascript/js/jquery-ui.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,'/SIMStyleAndJavascript/js/mapplotter.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript, '/SIMStyleAndJavascript/css/jquery.akordeon.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript, '/SIMStyleAndJavascript/css/jquery-ui.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript, '/SIMStyleAndJavascript/css/mapplotter.css')}"/>
+    <script>
+        // These functions, since they use VisualForce Remoting, can't be transfered to a common '.js'
+        function PlotMapPoints(map)
+        {
+             <apex:repeat value="{!ListMapPoint}" var="rec">
+                addMarker("{!rec.Latitude}", "{! rec.Longitude}", "{!JSENCODE(rec.DisplayName)}", "{!rec.PintPointColor}" ,"{!rec.SequenceNumber}", map, "{!rec.RecordId}", "{!rec.RecordTypeName}", {!rec.QueriedAsParent});
+             </apex:repeat>
+             mapGoogle.fitBounds(bounds);
+        }
+        function fnShowRecordDetailsForMapPoint(recordId, activeTab)
+        {
+            Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.Ctrl_MapPlotter.GetHTMLForRecordDetails}',recordId, fnProcessRemotingResponse, {escape: true});
+            fnOnClickInfoWindowTab(activeTab);
+        }
+        function fnShowWorldWeatherForMapPoint(recordId, activeTab)
+        {
+            Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.Ctrl_MapPlotter.GetHTMLForWorldWeather}',recordId, fnProcessRemotingResponse, {escape: true});
+            fnOnClickInfoWindowTab(activeTab);
+        }
+        function fnShowWorldWeatherForSearchPoint(activeTab)
+        {
+            var input = document.getElementById('place-input').value;
+            var city;
+            var listInput = input.split(",");
+            if(listInput.length > 3)
+            {
+                city = listInput[1];
+            }
+            else
+            {
+                city = listInput[0];
+            }
+            Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.Ctrl_MapPlotter.GetHTMLWorldWeatherForSearchPoint}',city, fnProcessRemotingResponse, {escape: true});
+            fnOnClickSearchInfoWindowTab(activeTab);
+        }    
+    </script>
+    <!-- This is for resize left panel -->
+    <script>
+        $(function() {
+            $('#buttons').akordeon();
+            $('#buttons2').akordeon();
+            $("#resizable").resizable().resize(function() {
+             $('.rightOne').css('width', (($('.container').width() / $('.rightOne').parent().width() * 100) - ($('.leftOne').width()/ $('.leftOne').parent().width() * 100))-(2) + '%');
+            });
+        });
+    </script>
+    <style>
+    body{-webkit-touch-callout: inherit !important;}
+        input.btn {background: none repeat scroll 0 0 #FFA202; color: #000000; margin: 10px auto;padding: 5px; width: 124px;}
+        input.disablebtn {background: none repeat scroll 0 0 #A9A9A9; color: #000000; margin: 10px auto;padding: 5px; width: 124px;}
+        #sidebarDiv{width:auto;}
+        .listing{}
+        .listing .listItems{ padding:4px 6px 8px;border-bottom:1px solid #dfdfdf}
+        ul, ol{list-style: none;}
+        #resizable { height: 549px; padding: 0.5em; }
+        #resizable h3 { text-align: center; margin: 0; }         
+        .leftResultsTabUL li {padding:4px 10px 7px 10px;}
+        .container {font-family:arial;font-size:auto;}
+        .akordeon-item.expanded .akordeon-icon span {top:-4px;}
+        input[type="checkbox"] {
+        -webkit-appearance: checkbox;
+        border:1px solid #666666;
+        background:#323232;
+        border-radius:0px;        
+        }
+        .akordeon-item-content{overflow-y:scroll !important;-webkit-overflow-scrolling: touch;}
+        body {
+          -webkit-user-select: none;
+        }
+        .akordeon-item-content {min-height:60px;}
+        .leftOne {width: 24%;}
+        .rightOne {width:73%;}
+        input.btn {margin:5px;}
+        #resizable {height:555px;}
+        .akordeon { font-family: Arial !important;
+        font-size: 12px !important;}
+        .comboRight .left input.btn {margin: 10px auto 20px 20px;
+        width: 90px;}
+        
+        @media only screen and (min-width: 320px) and (max-width: 767px) {
+                                .rightOne {
+width: 100%;
+
+}
+         }
+        @media screen and (min-width: 320px) and (max-width: 600px) { 
+                .leftOne{
+                width:100%!important;
+                }
+             
+                .mapHeadCheck2{margin: 9px 0 0!important;}
+               
+                #resizable{
+                   width:100%;
+                   height:255px!important;
+                }
+                    .comboRight {
+                        
+                        overflow: scroll;
+                        -webkit-overflow-scrolling: touch;
+                       
+                    }
+
+.akordeon{margin-top: 0px!important;}
+                .rightOne {
+                    width: 100%;
+                    padding-top:250px;
+                    background-color:white!important;
+                    }
+                                     
+            }
+              @media screen and (max-width: 320px){
+              
+              
+              .leftOne{
+                width:97%!important;
+                }
+                .rightOne {
+                width:100%!important;
+                }
+                #resizable {
+                    height: auto;
+                }
+                .container {
+                        
+                        width: 98%;
+                    }
+                .mapHeadCheck2 {
+                    margin: -10px 0 0;
+                    width: 311px;
+                }
+                #map{
+                    margin-top:30px;
+                }
+                .comboRight ,body{
+                        
+                        overflow: scroll;
+                        -webkit-overflow-scrolling: touch;
+                       
+                    }
+                    
+                .comboRight .left {
+                   
+                    width: auto;
+                }
+               body .bPageBlock .pbBody {
+                    padding: 0;
+                    width: 280px;
+                }
+                
+                    input.btn {
+                    width: 100%;
+                    margin: 0px;
+                    padding: 10px 3px!important;
+                    }
+                }
+                
+                .requiredBlock {
+                    background-color: #C00;
+                    height: 18px;
+                    width: 3px;
+                    display: inline-block;
+                    margin: 0px 1px 0px 0px;
+                }
+    </style>
+</apex:define>
+<!-- BODY -->
+
+<!-----------Code Added By Rahul  To display a section for entering API Key's if they are not set---------------->
+<apex:form id="MainForm">
+    <apex:pageBlock mode="edit" title="API Key Settings" rendered="{!!HasAPICustomSettings}">
+     <apex:pagemessages /><br/>
+     <apex:outputLabel >The Map Plotter application makes use of the Google geocoding service to geocode addresses.  Hence it is mandatory to enter this key before using the application.<br/>
+                           It also uses the World Weather Online API to show weather information around a selected data point on the map. However, entering this key is not mandatory if you do not wish to use weather information.<br/>
+                           <br/>
+                           The keys can be obtained, for free as follows:<br/><br/>
+                           <apex:outputText > <b>Google API: </b> </apex:outputText>
+                           <div>
+                               <ul style="list-style-type:disc">
+                                   <li> Click &nbsp; <apex:outputLink style="color:blue" target="_blank" value="https://code.google.com/apis/console/?noredirect">here</apex:outputLink> to sign into your Google account and follow the instructions to obtain your free API key. </li>
+                                   <li> If you don't have an API project already, click on 'Create Project' to create one.</li>
+                                   <li> In the 'Services' tab of your API Project, enable the 'Geocoding API' and accept the terms.</li>
+                                   <li> Click on the 'API Access' tab and get the API key.</li>
+                                   <li> Click &nbsp; <apex:outputLink style="color:blue" target="_blank" value="https://developers.google.com/maps/documentation/geocoding/#api_key">here</apex:outputLink> for additional details about the Google API key.</li>
+                               </ul>
+                           </div>
+                           <br/>
+                            <apex:outputText > <b>World Weather API: </b> </apex:outputText>
+                           <div>
+                               <ul style="list-style-type:disc">
+                                   <li> Click &nbsp; <apex:outputLink style="color:blue" target="_blank" value="https://developer.worldweatheronline.com/auth/register">here</apex:outputLink> here to register.</li>
+                                   <li> Under the 'Free-Weather-API-V2' section click on the 'Get a new key for this API' to obtain your free World Weather API key.</li>
+                               </ul>
+                           </div>
+        </apex:outputLabel>
+        <br/>
+     
+        <table>
+            <tr>
+                <td style="text-align:left;vertical-align:top;padding-top:3px;"><apex:outputLabel styleClass="labelCol vfLabelColTextWrap">Google API Key :  </apex:outputLabel></td>
+                <td style="text-align:left"><span class="requiredBlock"></span><apex:inputText id="ITGoogleAPI" value="{!GoogleAPIKeyInput}" html-placeholder="Google API key" style="margin-bottom:10px;width:90%" /></td>
+            </tr>
+            <tr>
+                <td style="text-align:left;vertical-align:top;padding-top:3px;"><apex:outputLabel styleClass="labelCol vfLabelColTextWrap">World Weather API Key :  </apex:outputLabel></td>
+                <td style="text-align:left"><apex:inputText id="ITWeatherAPI" value="{!WorldWeatherAPIKeyInput}" html-placeholder="World Weather API key" style="margin:0px 0px 10px 5px;width:90%" /></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><apex:commandButton value="Save" action="{!OnClickSaveAPICustomSettings}" style="margin-left:5px" /></td>
+            </tr>
+        </table><br/>        
+    </apex:pageBlock>
+
+    <apex:pageblock rendered="{!IsShowBatchRunningMessage}">
+        <apex:outputLabel ><br></br>Allow about an hour for the changes to reflect, and you can then begin using the app.<br></br><br></br>
+                   If you are still unable to use the application please see our User Guide 
+                  or you can reach out to us at&nbsp;<apex:outputLink style="color:blue" value="mailto:appexchange.apps@extentia.com">appexchange.apps@extentia.com</apex:outputLink><br></br><br></br>
+        </apex:outputLabel>
+        <apex:actionPoller action="{!CheckApexJobsStatus}" interval="20" reRender="MainForm"/>
+    </apex:pageblock>
+
+    <!-----------Code Added By Rahul------------------------------------------------------------------------------>
+
+  
+    <div class="pageLoading" style="display:none;">&nbsp;</div>
+    <div class="container" style="display:{!IF((HasAPICustomSettings==true&&IsShowBatchRunningMessage==false),true,'none')}">
+        <div id="resizable" class="ui-widget-content leftOne">
+            <div class="akordeon" id="buttons">
+                <!-- ******************************* -->
+                <!-- PANEL to show supported objects -->
+                <!-- ******************************* -->
+                <apex:outputpanel id="panelLeftQuery" rendered="{!DisplayPanelLeftQuery}">
+                    <div id="sidebarDiv">
+                        <div>
+                           <div class="headerLeftPanel">
+                                <h2 title="Select which data points you want to plot on the map.">
+                                    Select Data Points
+                               </h2>
+                           </div>
+                           <div class="listing">
+                                 <apex:repeat id="repeatSupportedObjects" value="{!ListSupportedObjects}"  var="o">
+                                    <div class="listItems">  
+                                        <apex:inputCheckbox id="chkObject" value="{!o.Checked}" title="{!o.APIName}"  label="{!o.APIName}"/>
+                                        <img src="{!JSENCODE(URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript, o.IconName))}"/>
+                                        <apex:outputLabel value="{!o.PluralsLabel}" for="chkObject"/>
+                                    </div>
+                                </apex:repeat>
+                           </div>
+                           <br/>
+                           <label>Select one or more data points from above to plot on the map.</label>
+                        </div>
+                    </div>
+                </apex:outputpanel>
+                <!-- ******************************* -->
+                <!-- PANEL to show supported objects -->
+                <!-- ******************************* -->
+                <apex:outputpanel id="panelLeftResults" rendered="{!DisplayPanelLeftResults}">
+                    <div class="divLeftResulsTabs">
+                        <ul class="leftResultsTabUL">
+                            <li id="leftTabResults" Title="Click to view data point results" class="tabActiveHeader" onclick="fnToggleResultTabs('leftTabResults');">Results</li>
+                            <li id="leftTabDirections" style="display:none;" Title="Click to view the directions between the selected map points." onclick="fnToggleResultTabs('leftTabDirections');">Directions</li>
+                        </ul>
+                    </div>
+                    <div id="leftDivResults">
+                        <apex:pageBlock >
+                            <div class="akordeon" id="buttons">
+                                <!--- Accounts and Contacts Results -->
+                                <apex:outputPanel id="panelLeftResultAccountAndContacts" rendered="{!FetchAccountsAndContacts}">
+                                    <div class="akordeon-item">
+                                        <div class="akordeon-item-head">
+                                            <div class="akordeon-item-head-container">
+                                                <div class="akordeon-heading" Title="Click to expand/collapse Accounts and Contacts section">
+                                                    <apex:inputCheckbox value="{!HasReplotForAccountsAndContacts}" styleClass="chkObjectType" id="chkAccountAndContacts" onclick="OnObjectTypeSelection(this);"/>
+                                                    <apex:outputLabel for="chkAccountAndContacts" value="Accounts and Contacts" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="akordeon-item-body">
+                                            <div class="akordeon-item-content">
+                                                <ul class="AnC">
+                                                    <apex:repeat value="{!ListAccountContactsMapPoint}" var="mapPoint">
+                                                        <li>
+                                                            <apex:inputCheckbox styleClass="mapPointCheckBox" id="chkMapPoint" value="{!mapPoint.Checked}"/>
+                                                            <apex:outputLabel for="chkMapPoint" value="{!mapPoint.SequenceNumber} - {!mapPoint.DisplayName}" title="{!mapPoint.Address}"></apex:outputLabel>
+                                                            <apex:outputLabel id="txtMapPointLatLng" style="display:none;" value="{!mapPoint.Latitude},{!mapPoint.Longitude}"/>
+                                                            <apex:image Title="Click to see me on map." rendered="{!!mapPoint.QueriedAsParent}" onclick="OnResultSimIconClick({!mapPoint.Latitude}, {!mapPoint.Longitude}, '{!JSENCODE(mapPoint.DisplayName)}','{!mapPoint.RecordTypeName}');" url="{!JSENCODE(URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,mapPoint.PinPointIconResource))}"/>
+                                                            <apex:repeat value="{!mapPoint.ChildrenMapPoint}" var="childMapPoint">
+                                                            <ul>
+                                                                <li>
+                                                                    <apex:inputCheckbox styleClass="mapPointCheckBox" id="chkChildMapPoint" value="{!childMapPoint.Checked}"/>
+                                                                    <apex:outputLabel for="chkChildMapPoint" value="{!childMapPoint.SequenceNumber} - {!childMapPoint.DisplayName}" title="{!childMapPoint.Address}"></apex:outputLabel>
+                                                                    <apex:outputLabel style="display:none;" id="txtChildMapPointLatLng"  value="{!childMapPoint.Latitude},{!childMapPoint.Longitude}"/>    
+                                                                    <apex:image Title="Click to see me on map." onclick=" OnResultSimIconClick({!childMapPoint.Latitude}, {!childMapPoint.Longitude}, '{!JSENCODE(childMapPoint.DisplayName)}', '{!childMapPoint.RecordTypeName}'); "  url="{!JSENCODE(URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,childMapPoint.PinPointIconResource))}"/>
+                                                                </li>
+                                                            </ul>
+                                                            </apex:repeat>
+                                                        </li>
+                                                    </apex:repeat>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>        
+                                </apex:outputpanel>
+                                <!--- All other results -->
+                                <apex:outputPanel id="panelLeftResultAll">
+                                    <apex:repeat value="{!ListSIMsObjectResult}" var="sObjectRes">
+                                        <div class="akordeon-item">
+                                            <div class="akordeon-item-head">
+                                                <div class="akordeon-item-head-container">
+                                                    <div class="akordeon-heading" Title="Click to expand/collapse {!sObjectRes.sObjectAPIName} section">
+                                                        <apex:inputCheckbox styleClass="chkObjectType" value="{!sObjectRes.Checked}" id="chkObjectTypeSelection" onclick="OnObjectTypeSelection(this);"/>
+                                                        <apex:outputLabel for="chkObjectTypeSelection" value="{!sObjectRes.sObjectAPIName}" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="akordeon-item-body">
+                                                <div class="akordeon-item-content">
+                                                    <ul class="AnC lead">
+                                                        <apex:repeat value="{!sObjectRes.ListMapPointInfo}" var="mapPoint">
+                                                            <li>
+                                                            <apex:inputCheckbox styleClass="mapPointCheckBox" id="chkMapPoint" value="{!mapPoint.Checked}"/>
+                                                            <apex:outputLabel for="chkMapPoint" value="{!mapPoint.SequenceNumber} - {!mapPoint.DisplayName}" title="{!mapPoint.Address}"></apex:outputLabel>
+                                                            <apex:outputLabel style="display:none;" id="txtMapPointLatLng"  value="{!mapPoint.Latitude},{!mapPoint.Longitude}"/>
+                                                            
+                                                            <apex:image Title="Click to see me on map." onclick="OnResultSimIconClick({!mapPoint.Latitude}, {!mapPoint.Longitude}, '{!JSENCODE(mapPoint.DisplayName)}','{!mapPoint.RecordTypeName}');" url="{!JSENCODE(URLFOR($Resource.Extentia_SIM__SIMStyleAndJavascript,mapPoint.PinPointIconResource))}" />
+                                                            </li>
+                                                        </apex:repeat>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>                        
+                                    </apex:repeat>
+                                </apex:outputpanel>
+                            </div>
+                            <apex:outputPanel id="panelLeftResultButtons">
+                                <hr/>
+                                <apex:commandButton action="{!OnClickReplotSelection}" value="Plot Selection" title="Replot selected points on map."/>
+                                &nbsp;
+                                <input class="btn" type="button" onclick="fnGetDirections();" value="Get Directions" title="Show direction between 2 points."/>
+                                &nbsp;
+                                <apex:commandButton action="{!OnClickClearSelection}" value="Clear Selection" title="Clear your selection and cancel replot selection."/>
+                                &nbsp;&nbsp;
+                                <apex:commandButton styleClass="disablebtn"  action="{!OnClickQueryAgain}" onclick="showProgress();" value="Select Countries" title="Do your query again."/>
+                            </apex:outputPanel>
+                        </apex:pageBlock>
+                    </div>
+                    <div id="leftDivDirections" style="display:none;">
+                        <apex:pageBlock >
+                            <table width="100%">
+                                <tr>
+                                    <td >Origin:</td>
+                                    <td>&nbsp;</td>
+                                    <td>
+                                        <label style="font-size:11px;font-weight:bold;font-family:verdana;" id="txtOriginDisplayName" /><br/>
+                                        <label style="font-size:10px;font-family:verdana;" id="lblOriginAddress" />
+                                        <label style="display:none;" id="txtOriginLatLong" />
+                                    </td>
+                                    <td rowspan="2">
+                                        <img height="50" width="50" onclick="fnSwapAndShowDirections(true);" alt="Swap" src="{!JSENCODE(URLFOR($Resource.SIMStyleAndJavascript,'/SIMStyleAndJavascript/images/swap.jpg'))}" title="Swap your source and destination points" />
+                                    </td>
+                                </tr>
+                                <tr><br/></tr>
+                                <tr>
+                                    <td>Destination:</td>
+                                    <td>&nbsp;</td>
+                                    <td>
+                                        <label style="font-size:11px;font-weight:bold;font-size:12px;font-family:verdana;" id="txtDestinationDisplayName" /><br/>
+                                        <label style="font-size:10px;font-family:verdana;" id="lblDestinationAddress" />
+                                        <label style="display:none;" id="txtDestinationLatLong" />
+                                    </td>
+                                </tr>
+                                <tr><td colspan="3" style="height:10px"></td></tr>
+                            </table>
+                            <div id="divDirectionsRoutes"/>
+                        </apex:pageBlock>
+                    </div>
+                </apex:outputpanel>
+            </div>
+        </div>
+        <!-- ============================== -->
+        <!-- RIGHT HAND SIDE - Map Section  -->
+        <!-- ============================== -->
+        <div class="rightOne">
+            <div class="comboRight">                      
+                <div class="left">
+                    <!--- Error Messages -->
+                    <apex:pageMessages id="errorMessage" escape="false"/>
+                    <!--- ************************** -->
+                    <!--- Search Panel -->
+                    <!--- ************************** -->
+                    <apex:outputpanel id="panelSearchPopup" rendered="{!DisplaySearchPopup}" >
+                        <div style="display:{!DisplaySearchPopup};">
+                            <div class="spacing" style="display:{!IF((IsSIMPointAvailable==true),true,'none')}">
+                                <div class="divLeftResulsTabs">
+                                    <ul class="leftResultsTabUL">
+                                        <li id="rightTabLocation" class="{!ClassNameLocationTab}" onclick="fnToggleSearchPanelTabs('rightTabLocation');">Location</li>
+                                        <li id="rightTabSearch" class="{!ClassNameSearch}" onclick="fnToggleSearchPanelTabs('rightTabSearch');">Search</li>
+                                    </ul>
+                                </div>
+                                <!-- Location -->
+                                <div id="divFilterRightLocation" style="display:{!JSENCODE(DisplayLocationTab)};"> 
+                                    <apex:pageBlock > 
+                                        <label>Plot data points for selected Countries, States and/or Cities.</label>
+                                        <br/><br/>
+                                        <!--<apex:commandButton action="{!OnClickFetchMapPointsForLocationFilter}" onclick="showProgress();" value="Show Map" />-->
+                                        <div class="akordeon" id="buttons2">
+                                            <apex:repeat var="country" value="{!ListSIMCountry}">
+                                                <div class="akordeon-item">
+                                                    <div class="akordeon-item-head">
+                                                        <div class="akordeon-item-head-container">
+                                                            <div class="akordeon-heading">
+                                                                <apex:inputCheckbox styleClass="countryCheckBox" id="chkCountry" onclick="OnCountrySelection(this);" value="{!country.Checked}" title="{!country.CountryName}"  label="{!country.CountryName}"/>
+                                                                <apex:outputLabel style="forecolor:red;font-weight:bold;" value="{!country.CountryName}" for="chkCountry"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>    
+                                                    <div class="akordeon-item-body">
+                                                        <div class="akordeon-item-content">
+                                                            <apex:repeat var="simState" value="{!country.ListSIMState}"  >
+                                                                    <ul class="states">
+                                                                        <li>
+                                                                            <apex:inputCheckbox styleClass="stateCheckBox" id="chkState" onclick="OnStateSelection(this);" value="{!simState.Checked}" title="{!simState.StateName}"  label="{!simState.StateName}"/>
+                                                                            <apex:outputLabel style="forecolor:blue;" value="{!simState.StateName}" for="chkState"/>
+                                                                            <ul class="statesCiti">
+                                                                                <apex:repeat var="simCity" value="{!simState.ListCity}" >
+                                                                                    <li>
+                                                                                        <apex:inputCheckbox styleClass="cityCheckBox" id="chkCity" value="{!simCity.Checked}" title="{!simCity.CityName}"  label="{!simCity.CityName}" onclick="OnCitySelection(this);"/>
+                                                                                        <apex:outputLabel value="{!simCity.CityName}" for="chkCity"/>
+                                                                                    </li>
+                                                                                </apex:repeat>
+                                                                            </ul>
+                                                                        </li>
+                                                                    </ul>
+                                                            </apex:repeat>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </apex:repeat>
+                                        </div>
+                                        <apex:commandButton Title="Click to show selected data points on the map for the location criteria." action="{!OnClickFetchMapPointsForLocationFilter}" onclick="showProgress();" value="Show Map" />
+                                        <div>
+                                            <label id="lblSelectedLocation"></label>    
+                                        </div>
+                                    </apex:pageBlock>    
+                                </div>
+                                <!-- Search Tab -->
+                                <div id="divFilterRightSearch" style="display:{!JSENCODE(DisplaySearchTab)};">
+                                    <apex:pageBlock >
+                                        <label>This tab helps you plot data points for a text search filter.</label>
+                                        <br/>
+                                        <apex:pageBlockSection title="Test" showHeader="true" rendered="false">
+                                        </apex:pageBlockSection>
+                                        <apex:inputText value="{!SearchInput}" id="searchInput" onkeypress="return onKeyPressNoEnter(event);" html-placeholder="Search" style="width:250px;height:22px;"/>
+                                      <apex:actionStatus id="SearchingStatus">
+                                          <apex:facet name="stop">
+                                              <apex:commandButton Title="Click to fetch data points for specified search text." action="{!OnClickSearchText}" value="Search" status="SearchingStatus" reRender="showTables,errorMessage" disabled="false"/>
+                                          </apex:facet>
+                                          <apex:facet name="start">
+                                              <apex:commandButton action="{!OnClickSearchText}" value="Searching..." status="SearchingStatus" reRender="showTables,errorMessage" styleClass="disablebtn" onclick="showProgress();" />
+                                          </apex:facet>
+                                      </apex:actionStatus>
+                                      <apex:actionStatus id="ClearingStatus">
+                                          <apex:facet name="stop">
+                                              <apex:commandButton action="{!OnClickClearSearchSelection}" Title="Click to cancel the current search." value="Cancel" reRender="showTables,searchInput,errorMessage" disabled="false" status="ClearingStatus"/>
+                                          </apex:facet>
+                                          <apex:facet name="start">
+                                              <apex:commandButton action="{!OnClickClearSearchSelection}" value="Cancelling..." reRender="showTables,searchInput,errorMessage" status="ClearingStatus" styleClass="disablebtn"/>
+                                          </apex:facet>
+                                      </apex:actionStatus>
+                                      <apex:outputPanel id="showTables">                                      
+                                          <apex:commandButton value="Show Map" Title="Click to show data points below on the map." rendered="{!SearchTextFilterApplied}" action="{!OnClickPlotOnMapForSearchFilter}"/>     
+                                          <apex:repeat value="{!ListSIMSearchResult}" var="SIMResult">
+                                                <div class="divSearchResultRepeat">  
+                                                    <apex:pageBlockSection title="{!SIMResult.SobjectAPIName} ({!SIMResult.Size})" columns="1" collapsible="true">
+                                                      <apex:pageBlockTable value="{!SIMResult.ListSIMSobject}" var="SIMSobject">
+                                                              <apex:column width="5%">
+                                                                  <apex:facet name="header">
+                                                                        <apex:inputCheckbox styleClass="searchHeaderCheckBox" onclick="OnSelectAllSelection(this);" value="{!SIMResult.Checked}"></apex:inputCheckbox>
+                                                                  </apex:facet>  
+                                                                  <apex:inputCheckbox styleClass="searchColumnCheckBox" value="{!SIMSobject.Checked}" onclick="ProcessRecordSelection(this);"/>
+                                                              </apex:column>
+                                                              <apex:column headerValue="Name" width="20%">
+                                                                  <apex:outputLink value="/{!SIMSobject.ObjectRecord['Id']}" target="_blank">{!SIMSobject.ObjectRecord['Name']}</apex:outputLink>
+                                                              </apex:column>
+                                                              <apex:column headerValue="Street" width="25%">
+                                                                  {!SIMSobject.Street}
+                                                              </apex:column>
+                                                              <apex:column headerValue="City" width="15%">
+                                                                  {!SIMSobject.City}
+                                                              </apex:column>
+                                                              <apex:column headerValue="State" width="15%">
+                                                                  {!SIMSobject.State}
+                                                              </apex:column>
+                                                              <apex:column headerValue="Postal Code" width="10%">
+                                                                  {!SIMSobject.PostalCode}
+                                                              </apex:column>
+                                                              <apex:column headerValue="Country" width="10%">
+                                                                  {!SIMSobject.Country}
+                                                              </apex:column>
+                                                        </apex:pageBlockTable>        
+                                                    </apex:pageBlockSection>
+                                                </div>    
+                                          </apex:repeat>
+                                      </apex:outputPanel>
+                                  </apex:pageBlock>
+                                </div>
+                            </div>    
+                        </div>
+                    </apex:outputpanel>
+                    <!--- ************************** -->
+                    <!--- Map Panel --> 
+                    <!--- ************************** -->
+                    <apex:outputpanel id="panelRightMap" rendered="{!DisplayPanelMap}" >
+                        <ul class="mapHeadCheck">
+                            <li><input type="checkbox" id="Search_Location" onclick="searchLocation();" style="align: right;" />Search Location<br/></li>
+                            <li><input id="place-input" class="controls" type="text" placeholder="Search Text" style="display:none;" onkeypress="return onKeyPressNoEnter(event);"/></li>         
+                        </ul>
+                        <ul class="mapHeadCheck2">
+                            <li><img src="{!JSENCODE(URLFOR($Resource.SIMStyleAndJavascript,'/SIMStyleAndJavascript/images/Pins/SIMAccountPinPoint.png'))}"/> Account </li>
+                            <li><img src="{!JSENCODE(URLFOR($Resource.SIMStyleAndJavascript,'/SIMStyleAndJavascript/images/Pins/SIMContactPinPoint.png'))}"/> Contact </li>
+                            <li><img src="{!JSENCODE(URLFOR($Resource.SIMStyleAndJavascript,'/SIMStyleAndJavascript/images/Pins/SIMLeadPinPoint.png'))}"/> Lead </li>
+                        </ul>
+                        <div id="map" style="width: 100%; height: 500px;"></div>
+                    </apex:outputpanel>
+                </div>                    
+            </div>        
+        </div>
+    </div>
+</apex:form>
+</apex:page>

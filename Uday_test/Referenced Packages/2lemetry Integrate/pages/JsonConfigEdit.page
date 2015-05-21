@@ -1,0 +1,228 @@
+<apex:page standardController="mqtt__JSON_Config__c" extensions="mqtt.JsonConfigEdit">
+ <apex:pageMessages />
+<head>
+	<apex:includeScript value="{!URLFOR($Resource.mqtt__jQuery)}"/>
+	
+</head>
+
+<script type="text/javascript"> 
+  function openLookup(baseURL, width, modified, searchParam){
+    var originalbaseURL = baseURL;
+    var originalwidth = width;
+    var originalmodified = modified;
+    var originalsearchParam = searchParam;
+ 
+    var lookupType = baseURL.substr(baseURL.length-3, 3);
+    if (modified == '1') baseURL = baseURL + searchParam;
+ 
+    var isCustomLookup = false;
+ 
+    if(lookupType == "a06"){
+ 
+      var urlArr = baseURL.split("&");
+      var txtId = '';
+      if(urlArr.length > 2) {
+        urlArr = urlArr[1].split('=');
+        txtId = urlArr[1];
+      }
+ 
+      // Following is the url of Custom Lookup page. You need to change that accordingly
+      baseURL = "/apex/CustomJsonConfigLookup?txt=" + txtId;
+ 
+      // Following is the id of apex:form control "myForm". You need to change that accordingly
+      baseURL = baseURL + "&frm=" + escapeUTF("{!$Component.myForm}");
+      if (modified == '1') {
+        baseURL = baseURL + "&lksearch=" + searchParam;
+      }
+ 
+      // Following is the ID of inputField that is the lookup to be customized as custom lookup
+      if(txtId.indexOf('complexConfig') > -1 ){
+        isCustomLookup = true;
+      }
+    }
+ 
+ 
+    if(isCustomLookup == true){
+      openPopup(baseURL, "lookup", 350, 480, "width="+width+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true);
+    }
+    else {
+      if (modified == '1') originalbaseURL = originalbaseURL + originalsearchParam;
+      openPopup(originalbaseURL, "lookup", 350, 480, "width="+originalwidth+",height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no", true);
+    } 
+  }
+</script>
+
+
+<script>
+
+	$(document).ready(function() {
+    	fieldTypeChange();
+    	uniqueFieldChange();
+      
+    });
+	
+	function fieldTypeChange() {
+		var fieldType = $('select[id$=fieldType]').val();
+		console.log('fieldType=' + fieldType);
+		if(fieldType == 'List') {
+			$('select[id$=listFieldType]').removeAttr('disabled');
+			fieldType = $('select[id$=listFieldType]').val();
+			console.log('fieldType=' + fieldType);
+		} else {
+			$('select[id$=listFieldType]').attr('disabled', 'disabled');
+		}
+		if(fieldType == 'Complex') {
+			$('input[id$=sObjectField]').attr('disabled', 'disabled');
+			$('input[id$=complexConfig]').removeAttr('disabled');
+			$('a[id$=complexConfig_lkwgt]').css('display', 'inline');
+		} else if(fieldType == ''){
+			$('input[id$=sObjectField]').attr('disabled', 'disabled');
+			$('input[id$=complexConfig]').attr('disabled', 'disabled');
+			$('a[id$=complexConfig_lkwgt]').css('display', 'none');
+		} else {
+			$('input[id$=sObjectField]').removeAttr('disabled');
+			$('input[id$=complexConfig]').attr('disabled', 'disabled');
+			$('a[id$=complexConfig_lkwgt]').css('display', 'none');
+		}
+	}
+	
+	function uniqueFieldChange() {
+		if($('input[id$=uniqueField]').is(':checked')) {
+			$('input[id$=updateExisting]').removeAttr('disabled');
+		} else {
+			$('input[id$=updateExisting]').attr('disabled', 'disabled');
+		}
+	}
+</script>
+
+
+<apex:form >
+<br/>
+<b>
+<apex:outputText value="Back to " rendered="{!NOT(ISNULL(parentConfig.Json_Config__r.Id))}" />
+<apex:outputLink value="/apex/JsonConfigEdit?id={!parentConfig.Json_Config__r.Id}" id="the_link" rendered="{!NOT(ISNULL(parentConfig.Json_Config__r.Id))}"><apex:outputText value="{!parentConfig.Json_Config__r.Name}"/></apex:outputLink>
+</b>
+<div>
+	<img src="{!URLFOR($Resource.configimages, 'json.png')}" height="30px"/>
+	<apex:pageBlock >
+		<apex:pageBlockButtons location="bottom">
+			<apex:commandButton value="Save" action="{!save}" rendered="{!if(editMode, TRUE, FALSE)}"/>
+			<apex:commandButton value="Edit" action="{!edit}" rendered="{!if(editMode, FALSE, TRUE)}"/>
+			<apex:commandButton value="Cancel" action="{!edit}" rendered="{!if(editMode, TRUE, FALSE)}"/>
+			<apex:commandButton value="Edit Rules" action="{!editRules}" />
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection collapsible="false" rendered="{!if(editMode, FALSE, TRUE)}" >
+			<apex:outputField label="Name" id="configName" value="{!config.Name}" />
+			<apex:outputField label="SObject" id="sObject" value="{!config.mqtt__SObject__c}"/>
+			<apex:outputText label="Rule" id="rule" value="{!ruleStr}" style="white-space:pre"/>
+			<apex:outputField label="Parent Field" id="parentField" value="{!config.mqtt__Parent_Field__c}"/>
+		</apex:pageBlockSection>
+		
+		<apex:pageBlockSection collapsible="false" rendered="{!if(editMode, TRUE, FALSE)}">
+			<apex:inputField label="Name" id="configName" value="{!config.Name}" />
+			<apex:inputField label="SObject" id="sObject" value="{!config.mqtt__SObject__c}"/>
+			<apex:outputText label="Rule" id="rule" value="{!ruleStr}" />
+			<apex:inputField label="Parent Field" id="parentField" value="{!config.mqtt__Parent_Field__c}"/>		
+		</apex:pageBlockSection>
+		
+	</apex:pageBlock>
+</div>
+<div style="float:left; {!IF(currentDetail == null && !isEditRule, 'width:100%', 'width:64%')}">
+<img src="{!URLFOR($Resource.configimages, 'configd.png')}" height="30px"/>
+	<apex:pageBlock >
+		<apex:pageBlockButtons location="bottom">
+			<apex:commandButton value="New" action="{!newDetail}" />
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection collapsible="false" columns="1">
+			<apex:pageBlockTable value="{!configDetailList}" var="cd">
+				<apex:column headerValue="Actions" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}">
+                    <apex:commandLink value="Delete" action="{!deleteDetail}">
+                        <apex:param name="detailId" value="{!cd.Id}" assignTo="{!detailId}"/>
+                    </apex:commandLink>
+                    |&nbsp;
+                    <apex:commandLink value="Edit" action="{!editDetail}">
+                        <apex:param name="detailId" value="{!cd.Id}" assignTo="{!detailId}" />
+                    </apex:commandLink>
+                </apex:column>
+				<apex:column value="{!cd.mqtt__JSON_Field__c}" headerValue="Json Field" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}"/>
+				<apex:column value="{!cd.mqtt__Field_Type__c}" headerValue="Field Type" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}"/>
+				<apex:column value="{!cd.mqtt__SObject_Field__c}" headerValue="SObject Field" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}"/>
+				<apex:column value="{!cd.mqtt__List_Field_Type__c}" headerValue="List Field Type" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}"/>
+				<apex:column headerValue="Complex Config" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}">
+					<a href="/apex/JsonConfigEdit?id={!cd.mqtt__Complex_Field_JSON_Config__c}">{!cd.Complex_Field_JSON_Config__r.Name}</a>
+				</apex:column>
+				<!-- <apex:column value="{!cd.Complex_Field_JSON_Config__c}" headerValue="Complex Config" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}"/>
+				 -->
+				<apex:column headerValue="Unique Field" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}">
+					<apex:inputCheckBox value="{!cd.mqtt__JSON_Field__c == config.mqtt__Unique_Field__c}" disabled="true"/>
+					<apex:outputText value="{!IF(config.mqtt__Update_Existing__c, '(Update)', '')}" rendered="{!cd.mqtt__JSON_Field__c == config.mqtt__Unique_Field__c}"/>
+				</apex:column>
+				<apex:column headerValue="Account Field" style="{!IF(cd.Id==currentDetail.Id, 'background-color:rgb(220, 251, 220)', '')}"><apex:inputCheckBox value="{!cd.mqtt__JSON_Field__c == config.mqtt__Account_Field__c}" disabled="true"/></apex:column>
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+</div>
+<div style="width:35%; float:right;">
+<apex:image url="{!URLFOR($Resource.mqtt__configimages, 'dedit.png')}" height="30px" rendered="{!currentDetail <> null}"/>
+	<apex:pageBlock id="detailBlock" rendered="{!currentDetail <> null}">
+		<apex:pageBlockButtons location="bottom">
+			<apex:commandButton value="Save" action="{!saveDetail}"/>
+			<apex:commandButton value="Save & New" action="{!saveNewDetail}"/>
+			<apex:commandButton value="Cancel" action="{!cancelDetailEdit}"/>
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection columns="2">
+			<apex:outputLabel value="JSON Field" styleClass="labelCol" />
+			<apex:inputField label="" value="{!currentDetail.mqtt__JSON_Field__c}" id="jsonField" />
+			<apex:outputLabel value="Field Type" styleClass="labelCol" />
+			<!-- <apex:selectList value="{!fieldType}" size="1" id="fieldType" onChange="fieldTypeChange();">
+				<apex:selectOptions value="{!fieldTypes}"/>
+			</apex:selectList> -->
+			<apex:inputField label="" id="fieldType" value="{!currentDetail.mqtt__Field_Type__c}" onChange="fieldTypeChange();"/>
+			<apex:outputLabel value="SObject Field" styleClass="labelCol" />
+			<apex:inputField label="" value="{!currentDetail.mqtt__SObject_Field__c}" id="sObjectField" />
+			<apex:outputLabel value="List Field Type" styleClass="labelCol" />
+			<!-- <apex:selectList value="{!listFieldType}" size="1" id="listFieldType" disabled="true" onChange="fieldTypeChange();">
+				<apex:selectOptions value="{!listFieldTypes}"/>
+			</apex:selectList> -->
+			<apex:inputField label="" id="listFieldType" value="{!currentDetail.mqtt__List_Field_Type__c}" onChange="fieldTypeChange();"/>
+			<apex:outputLabel value="Complex Config" styleClass="labelCol" />
+			<apex:inputField label="" id="complexConfig" value="{!currentDetail.mqtt__Complex_Field_JSON_Config__c}" ></apex:inputField>
+			<apex:outputLabel value="Unique Field" styleClass="labelCol" />
+			<apex:inputCheckBox id="uniqueField" value="{!isCuttrentDetailUniqueField}" onchange="uniqueFieldChange()"/>
+			<apex:outputLabel value="Update" styleClass="labelCol" />
+			<apex:inputCheckBox id="updateExisting" label="" value="{!config.mqtt__Update_Existing__c}"/>
+			<apex:outputLabel value="Account Field" styleClass="labelCol" />
+			<apex:inputCheckBox value="{!isCuttrentDetailAccountField}"/>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+</div>
+<div style="width:35%; float:right;" >
+<apex:image url="{!URLFOR($Resource.mqtt__configimages, 'edit.png')}" height="30px" rendered="{!isEditRule}"/>
+	<apex:pageBlock rendered="{!isEditRule}">
+		<apex:pageBlockButtons location="bottom">
+			<apex:commandButton value="Save" action="{!saveRule}"/> <apex:commandButton value="Close" action="{!CloseRule}"/>
+		</apex:pageBlockButtons>
+		<apex:pageBlockTable value="{!ruleList}" var="rule" >
+			<apex:column headerValue="Action" >
+                <apex:commandLink value="Delete" action="{!deleteRule}">
+                    <apex:param name="deleteRuleIndex" value="{!rule.index}" assignTo="{!deleteRuleIndex}"/>
+                </apex:commandLink>
+            </apex:column>
+			<apex:column headerValue="Field" >
+				<apex:selectList value="{!rule.field}" size="1">
+					<apex:selectOptions value="{!ruleFieldsPickList}" />
+				</apex:selectList>
+			</apex:column>
+			<apex:column headerValue="Operator">
+				<apex:selectList value="{!rule.operator}" size="1">
+					<apex:selectOptions value="{!operatorsPickList}" />
+				</apex:selectList>
+			</apex:column>
+			<apex:column headerValue="Value">
+				<apex:inputText value="{!rule.value}" style="width:50px;" />
+			</apex:column>
+		</apex:pageBlockTable>
+	</apex:pageBlock>
+</div>
+</apex:form>
+</apex:page>

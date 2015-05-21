@@ -1,0 +1,28 @@
+<apex:page controller="CameraAccess" standardStylesheets="false" showHeader="false">
+
+<apex:stylesheet value="//cdn.jsdelivr.net/webjars/bootstrap-sf1/0.1.0-beta.6/css/bootstrap-namespaced.css" />
+<div class="container">
+<div class="row clearfix">
+<div class="col-md-12 column">
+<div class="jumbotron">
+<h1> Camera Access in Visualforce using HTML 5 </h1>
+
+</div>
+<div class="panel panel-warning">
+<div class="panel-heading">
+ <apex:form >
+<p>
+<apex:inputFile value="{!cont.VersionData}"  accept="image/*;capture=camera" filename="{!cont.Title}" />
+ </p>
+<p>
+<apex:commandButton StyleClass="btn btn-danger" action="{!saveFile}" value="Save File" />
+</p>
+</apex:form>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+</apex:page>

@@ -1,0 +1,10 @@
+<apex:page controller="Mycontroller">
+<apex:pageBlock >
+<apex:pageblockTable value="{!Accs}" var="a"> 
+<apex:column value="{!a.id}"></apex:column>
+<apex:column value="{!a.name}"/>
+<apex:column value="{!a.type}"/>
+
+</apex:pageblockTable>
+</apex:pageBlock>
+</apex:page>

@@ -1,0 +1,22 @@
+<apex:page sidebar="false" >
+<p>{! $User.FirstName &' '& $User.LastName }</p>
+    <apex:pageBlock title="New Block">
+          <p>the maximum value is {! MAX(1,100,56,57,10,15,63,49,56,35)}</p>
+          <apex:pageBlockSection title="new section">
+              <p>hi
+              hello
+              how r u</p>
+          </apex:pageBlockSection>
+      </apex:pageBlock>
+  
+  <apex:pageBlock title="second block">
+  
+  </apex:pageBlock>
+  
+  <apex:pageBlock title="new block" >
+          <apex:pageBlockSection title="new section">
+  
+                  <p>this is a new place</p>
+          </apex:pageBlockSection>
+  </apex:pageBlock>
+</apex:page>

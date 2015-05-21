@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Display the ThingFabric portal.</description>
+    <frameHeight>1200</frameHeight>
+    <hasSidebar>true</hasSidebar>
+    <icon>X2lemetry_images/X2lemetry_ThingFabric_logo.jpg</icon>
+    <label>ThingFabric</label>
+    <mobileReady>true</mobileReady>
+    <motif>Custom238: TV Widescreen</motif>
+    <url>https://app.ThingFabric.com/dashboard</url>
+    <urlEncodingKey>UTF-8</urlEncodingKey>
+</CustomTab>
